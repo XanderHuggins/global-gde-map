@@ -1,0 +1,110 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2638
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 ////////////////////////////////////////////////////////////////////////////////////////////////////\
+// Title: DTW_Images\
+// Authors: Christine Albano and Melissa M. Rohde\
+// Description: Mask out surface water features from Depth-to-groundwater data \
+// Last Date Modified: November 3, 2022\
+////////////////////////////////////////////////////////////////////////////////////////////////////\
+\
+\
+/////////////////////////////////////\
+// Step 1. Set Inputs and Options //\
+////////////////////////////////////\
+\
+Map.setOptions("SATELLITE")\
+\
+// Define globe\
+var globe = ee.Geometry.Polygon(\
+      [[-176.12888854244886,-76.07716187469589],\
+      [183.16798645755114,-76.07716187469589],\
+      [183.16798645755114,84.58398896944963],\
+      [-176.12888854244886,84.58398896944963],\
+      [-176.12888854244886,-76.07716187469589]],\
+      null, false )\
+\
+///////////////////////////////////////\
+// Step 2. Load and smooth DTW Data //\
+//////////////////////////////////////\
+\
+// Step 2.1 Load DTW data by continent\
+    // Africa\
+    var AfDTW = ee.Image('projects/ee-global-gde-map/assets/DTW_Africa')\
+    \
+    // Oceania\
+    var OcDTW = ee.Image('projects/ee-global-gde-map/assets/DTW_Oceania')\
+    \
+    // North America\
+    var NADTW = ee.Image('projects/ee-global-gde-map/assets/DTW_NA')\
+    \
+    // South America\
+    var SADTW = ee.Image('projects/ee-global-gde-map/assets/DTW_SA')\
+    \
+    // Eurasia\
+    var EADTW = ee.Image('projects/ee-global-gde-map/assets/DTW_Eurasia')\
+    \
+    print(AfDTW.projection().nominalScale()) // Check scale for export. Original scale of data is 926 m\
+\
+// Step 2.2. Mosaic continental data into single image to clean up masked pixels in the DTW images (especially along rivers and water bodies). \
+// Resample to smooth the data and fill in gaps.\
+var DTW = ee.Image(ee.ImageCollection([AfDTW.resample(),EADTW.resample(),OcDTW.resample(),SADTW.resample(),NADTW.resample()]).mosaic())\
+Map.addLayer(DTW,\{bands:['b1'],min: -200, max: 0\},"DTW")\
+\
+\
+///////////////////////////////////////////////////////////\
+// Step 3. Mask out surface water features from DTW data //\
+///////////////////////////////////////////////////////////\
+\
+// Step 3.1. Load Land cover data to identify water\
+\
+  //Dynamic Land Cover (10m resolution)\
+  // Source: https://samapriya.github.io/awesome-gee-community-datasets/projects/esrilc2020/\
+  //[b1]: 1-Water,2-Trees,3-Grass,4-Flooded Vegetation,5-Crops,6-Scrub/Shrub,7-Built Area,8-Bare Ground,9-Snow/Ice,10-Clouds\
+  var dlc= ee.ImageCollection("projects/sat-io/open-datasets/landcover/ESRI_Global-LULC_10m").mosaic()\
+  var water = dlc.eq(1)\
+  Map.addLayer(water,\{\},'water')\
+\
+\
+// Step 3.2. Create water mask and make water values = 0\
+var SW_mask= dw.updateMask(water).multiply(0)\
+Map.addLayer(SW_mask)\
+\
+// Masked DTW pixels colocated with water mask are set to 0\
+var DTW_SW = DTW.unmask(SW_mask)\
+print(DTW_SW) \
+Map.addLayer(DTW_SW,\{bands:['b1'],min: -200, max: 0\},"DTW_SW")\
+\
+// Step 3.3. Smooth the data to interpolate to fill in holes with missing data\
+var DTW_smooth_SW = DTW_SW.focal_mean(1.5, 'square', 'pixels')\
+Map.addLayer(DTW_smooth_SW,\{bands:['b1'],min: -200, max: 0\},"DTW_Smooth_SW")\
+\
+// Step 3.4. Assign remaining masked values DTW=0 \
+var DTW_smooth_SW0 = DTW_smooth_SW.unmask(0)\
+Map.addLayer(DTW_smooth_SW0,\{bands:['b1'],min: -200, max: 0\},"DTW_Smooth_SW0")\
+\
+\
+////////////////////////////////\
+// Step 4. Export as an asset //\
+////////////////////////////////\
+Export.image.toAsset(\{\
+  image: DTW_smooth_SW0,\
+  description: 'GlobalDTW_asset',\
+  assetId: 'GlobalDTW',\
+  scale: 927.6586906217893,\
+  region: globe,\
+  maxPixels: 1E10,\
+\});\
+\
+Export.image.toDrive(\{\
+  image: DTW_smooth_SW0,\
+  description: 'GlobalDTW_drive',\
+   folder: 'EE_Exports',\
+  scale: 927.6586906217893,\
+  region: globe,\
+  maxPixels: 1E10,\
+\});}
