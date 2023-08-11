@@ -1,4 +1,4 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2706
+{\rtf1\ansi\ansicpg1252\cocoartf2709
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
 {\*\expandedcolortbl;;}
@@ -6,10 +6,11 @@
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f0\fs24 \cf0 ////////////////////////////////////////////////////////////////////////////////////////////////////\
-// Title: GDE_TrainingData\
-// Authors: Christine Albano and Melissa M. Rohde\
-// Description: Generate training points to map global groundwater-dependent ecosystems \
-// Last Date Modified: November 3, 2022\
+// Title: 7_CrossValidation_NewMexico_HyperparameterTuning\
+// Authors: Melissa M. Rohde\
+// Description: Tune parameters in random forest for New Mexico cross validation test\
+// to retrieve optimal parameters to achieve highest accuracy\
+// Last Date Modified: April 23, 2023\
 ////////////////////////////////////////////////////////////////////////////////////////////////////\
 \
 \
@@ -17,7 +18,7 @@
 // Step 1. Set Inputs and Options //\
 ////////////////////////////////////\
 \
-Map.setOptions("SATELLITE")\
+Map.setOptions("SATELLITE");\
 \
 // Define globe\
 var globe = ee.Geometry.Polygon(\
@@ -26,17 +27,17 @@ var globe = ee.Geometry.Polygon(\
       [183.16798645755114,84.58398896944963],\
       [-176.12888854244886,84.58398896944963],\
       [-176.12888854244886,-76.07716187469589]],\
-      null, false )\
+      null, false );\
       \
 // Define northern hemisphere\
 var nhem = ee.Geometry.Polygon(\
         [[[-180, 60], [-180, 0], [0, 0], [180, 0], [180, 60], [0, 60]]], \
-        null, false)\
+        null, false);\
 \
 // Define southern hemisphere\
 var shem = ee.Geometry.Polygon(\
         [[[-180, 0], [-180, -60], [0, -60], [180, -60], [180, 0], [0, 0]]], \
-        null, false)\
+        null, false);\
 \
 /////////////////////////////////////////////////////////////////\
 // Step 2. Compile predictor variables for the predictor image //\
@@ -45,22 +46,28 @@ var shem = ee.Geometry.Polygon(\
 // Step 2.1. Load Datasets\
 \
 // A. Land Cover\
-    // Source: Dynamic Land Cover (10m resolution) - https://samapriya.github.io/awesome-gee-community-datasets/projects/esrilc2020/\
-    //  [b1]: 1-Water,2-Trees,3-Grass,4-Flooded Vegetation,5-Crops,6-Scrub/Shrub,7-Built Area,8-Bare Ground,9-Snow/Ice,10-Clouds\
-    var dlc= ee.ImageCollection("projects/sat-io/open-datasets/landcover/ESRI_Global-LULC_10m").mosaic()\
-    var urb_dlc = dlc.neq(7) //Built\
-    var ag_dlc = dlc.neq(5) //Crops\
-    \
+// ESRI 10m Annual Land Use Land Cover(2017-2022)\
+// Source: https://planetarycomputer.microsoft.com/dataset/io-lulc-9-class\
+// Source: https://gee-community-catalog.org/projects/S2TSLULC/\
+//  [b1]: 1-Water,2-Trees,4-Flooded Vegetation,5-Crops,6-Scrub/Shrub,7-Built Area,8-Bare Ground,9-Snow/Ice,10-Clouds, 11-Rangeland\
+\
+var esri_lulc10= ee.ImageCollection('projects/sat-io/open-datasets/landcover/ESRI_Global-LULC_10m_TS')\
+                    .filterDate('2017-01-01','2020-12-31') // Composite of study period.\
+                    .mosaic();\
+\
+    var urb = esri_lulc10.neq(7); // built\
+    var ag = esri_lulc10.neq(5); // crops\
+\
     // Landcover to mask out oceans\
     var dlc_100m = ee.Image("COPERNICUS/Landcover/100m/Proba-V-C3/Global/2019").select('discrete_classification');\
     var ocean_dlc = dlc_100m.neq(200) //oceans\
 \
-// B. Depth to groundwater (DTW)\
-// Source: Fan et al. 2013 -- smoothed/pre-processed using "DTW_Images" google earth code.\
-    var DTW = ee.Image('projects/ee-global-gde-map/assets/GlobalDTW') \
-          .resample('bilinear').rename('DTW')\
-     var DTW_mask = DTW.gte(-30) // Mask out DTW depths greater than or equal to 30 meters.\
-      Map.addLayer(DTW.updateMask(DTW_mask), \{min: -200.0, max: 0, palette:  ['#EFE7E1', '#003300']\}, 'DTW', false)\
+// B. Depth to groundwater (DTG)\
+// Source: Fan et al. 2017 -- smoothed/pre-processed using "DTG_Smoothing" google earth engine code.\
+    var DTG = ee.Image('projects/ee-global-gde-map/assets/GlobalDTG') \
+          .resample('bilinear').rename('DTG')\
+     var DTG_mask = DTG.gte(-30) // Mask out DTG depths greater than or equal to 30 meters.\
+      Map.addLayer(DTG.updateMask(DTG_mask), \{min: -200.0, max: 0, palette:  ['#EFE7E1', '#003300']\}, 'DTG', false)\
 \
 // C. Drylands\
     // Source: Koppen-Geiger regions (Beck et al. 2018)\
@@ -72,7 +79,7 @@ var shem = ee.Geometry.Polygon(\
 // D. Compound Topographic Index (CTI)\
     // Source: https://catalogue.ceh.ac.uk/documents/6b0c4358-2bf3-4924-aa8f-793d468b92be\
     var CTI = ee.Image('projects/ee-global-gde-map/assets/TopConvIndex_Global_KGclims').resample('bilinear').rename('CTI');\
-    print("CTI",CTI)\
+    //print("CTI",CTI)\
     Map.addLayer(CTI, \{min: -1,max: 13,palette: ['0b1eff', '4be450', 'fffca4', 'ffa011', 'ff0000'],\}, 'CTI', false)\
 \
 \
@@ -91,7 +98,7 @@ var shem = ee.Geometry.Polygon(\
       var byAnnual = ee.ImageCollection(years.map(annualSums))\
       \
       // Import ETa data\
-      var ETa = ee.ImageCollection("CAS/IGSNRR/PML/V2").select("Ec")  \
+      var ETa = ee.ImageCollection('CAS/IGSNRR/PML/V2_v017').select("Ec")  \
       \
       function annualETas(y)\{\
         return ETa\
@@ -193,10 +200,10 @@ function landsatPrep(image)\{\
     .multiply([0.0000275, 0.0000275, 0.0000275, 0.0000275])\
     .add([-0.2, -0.2, -0.2, -0.2])\
     .updateMask(KG_mask2)\
-    .updateMask(urb_dlc)\
-    .updateMask(ag_dlc)\
+    .updateMask(urb)\
+    .updateMask(ag)\
     .updateMask(ocean_dlc)\
-    .updateMask(DTW_mask)\
+    .updateMask(DTG_mask)\
   return landsat.addBands([NDVI(landsat), NDWI1(landsat), NDWI2(landsat), MSAVI(landsat)])\
     .set(\{'system:time_start': image.get('system:time_start')\})\}\
 \
@@ -377,173 +384,249 @@ var mean_lst_tpi_ms = (mean_lst_tpi.select('lst_tpi5400')\
 \
 // STEP 2.3. Combine all predictor variables into a single image \
   var predictorimage = mean_vis\
-    .addBands([cv_vis, seas_cv_vis, DTW, mTPI, etaP, CTI, mean_lst_tpi_ms])\
-    .updateMask(urb_dlc)  // mask out urban lands from predictor image\
+    .addBands([cv_vis, seas_cv_vis, DTG, mTPI, etaP, CTI, mean_lst_tpi_ms])\
+    .updateMask(urb)  // mask out urban lands from predictor image\
     .updateMask(KG_mask2) // mask out areas outside drylands\
     .updateMask(ocean_dlc)// mask out oceans\
-    .updateMask(DTW_mask) // mask out areas where DTW gte 30 m\
-    .updateMask(ag_dlc);  // mask out agricultural lands from predictor image\
+    .updateMask(DTG_mask) // mask out areas where DTG gte 30 m\
+    .updateMask(ag);  // mask out agricultural lands from predictor image\
 \
-Map.addLayer(predictorimage, \{\}, 'predictor image',false);\
+//print('predictor image',predictorimage)\
+\
+//Create predictor image of bands used as predictors in the random forest model\
+var predictorimage_rfbands = predictorimage.select(["ETaP","CTI","lst_tpi5400","msavi","msavi_cv","ndvi", "ndvi_cv","ndwi_leaf","ndwi_leaf_cv","ndwi_water","ndwi_water_cv"])\
+\
+//print('predictorimage_rfbands',predictorimage_rfbands)\
+\
+///////////////////////////////////////////\
+//  STEP 3. LOAD TRAINING DATA        //\
+///////////////////////////////////////////\
+\
+var validation1 = ee.FeatureCollection('projects/ee-global-gde-map/assets/CrossValidation/validationpts1_withpredictors_noNewMexico');\
+var validation2 = ee.FeatureCollection('projects/ee-global-gde-map/assets/CrossValidation/validationpts2_withpredictors_noNewMexico');\
+var test = validation1.merge(validation2);\
+\
+var training1 = ee.FeatureCollection('projects/ee-global-gde-map/assets/CrossValidation/trainingpts1_withpredictors_noNewMexico');\
+var training2 = ee.FeatureCollection('projects/ee-global-gde-map/assets/CrossValidation/trainingpts2_withpredictors_noNewMexico');\
+var training3 = ee.FeatureCollection('projects/ee-global-gde-map/assets/CrossValidation/trainingpts3_withpredictors_noNewMexico');\
+var training4 = ee.FeatureCollection('projects/ee-global-gde-map/assets/CrossValidation/trainingpts4_withpredictors_noNewMexico');\
+var training5 = ee.FeatureCollection('projects/ee-global-gde-map/assets/CrossValidation/trainingpts5_withpredictors_noNewMexico');\
+var training6 = ee.FeatureCollection('projects/ee-global-gde-map/assets/CrossValidation/trainingpts6_withpredictors_noNewMexico');\
+var training7 = ee.FeatureCollection('projects/ee-global-gde-map/assets/CrossValidation/trainingpts7_withpredictors_noNewMexico');\
+var training8 = ee.FeatureCollection('projects/ee-global-gde-map/assets/CrossValidation/trainingpts8_withpredictors_noNewMexico');\
+var training = training1.merge(training2).merge(training3).merge(training4).merge(training5).merge(training6).merge(training7).merge(training8);\
 \
 \
-///////////////////////////////////\
-// Step 3. Create Training Data //\
-//////////////////////////////////\
+print('Size of training',training.size())\
+print('Size of test', test.size())\
 \
+//////////////////////////////////////////\
+//  STEP 4. HYPERPARAMETER TUNING       //\
+//////////////////////////////////////////\
 \
-// Step 3.1. Load Training Points \
+// AVOID MEMORY LIMITS BY RUNNING EACH VARIABLE SEPARATELY \
 \
-    // Landfire and Australia GDE Atlas (Source: CODE)\
-    var trainingPts1 = ee.FeatureCollection('projects/ee-global-gde-map/assets/GlobalGDEMap_TrainingPoints_AusLandfire');\
-        print('AusLandsatTrainingSize',trainingPts1.size()); // Check sample size\
-        \
-    // Random Barren points (Source: "RandomBareGroundPoints" Google Earth Code)\
-    var trainingPts2 = ee.FeatureCollection('projects/ee-global-gde-map/assets/random_barren_nhem');\
-    var trainingPts3 = ee.FeatureCollection('projects/ee-global-gde-map/assets/random_barren_shem');\
-        print('Barren-nhem Size',trainingPts2.size()); // Check sample size\
-        print('Barren-shem Size',trainingPts3.size()); // Check sample size\
-        \
-    // Merge all training points\
-    var trainingPtsall = trainingPts1.merge(trainingPts2).merge(trainingPts3);\
-       print('rawTrainingDataSize',trainingPtsall.size()); // Check sample size\
-      //print(trainingPts.limit(1000),'trainingPts');\
-      Map.addLayer(trainingPtsall,\{\},'trainingPtsall');\
+// --- Number of Trees --- //\
+// Tune the numberOfTrees parameter.\
+var numTreesList = ee.List.sequence(10, 80, 10);\
 \
-// Step 3.2. Append predictor variables to training data using the sampleRegions function.\
+var accuracies_trees = numTreesList.map(function(t) \{\
+  var classifier = ee.Classifier.smileRandomForest(\{\
+    numberOfTrees:t\})\
+      .train(\{\
+        features: training,\
+        classProperty: 'class',\
+        inputProperties: predictorimage_rfbands.bandNames()\
+      \});\
 \
-// Step 3.2.1. Break up training data into subsets so that memory limits are not exceeded.\
-      var indexes = ee.List(trainingPtsall.aggregate_array('system:index'))\
-      var ids = ee.List.sequence(1, indexes.size())\
-      var idByIndex = ee.Dictionary.fromLists(indexes, ids)\
-      var trainingPts = trainingPtsall.map(function (feature) \{\
-        return feature.set('id', idByIndex.get(feature.get('system:index')))\
-      \})\
-      \
-      var training_data1 = trainingPts\
-          .randomColumn("random",0,"uniform")\
-          .filter(ee.Filter.and(ee.Filter.gte('random', 0.20),ee.Filter.lt('random', 0.40)));\
-      var training_data2 = trainingPts\
-          .randomColumn("random",0,"uniform")\
-          .filter(ee.Filter.and(ee.Filter.gte('random', 0.40),ee.Filter.lt('random', 0.60)));\
-      var training_data3 = trainingPts\
-          .randomColumn("random",0,"uniform")\
-          .filter(ee.Filter.and(ee.Filter.gte('random', 0.60),ee.Filter.lt('random', 0.80)));\
-      var training_data4 = trainingPts\
-          .randomColumn("random",0,"uniform")\
-          .filter(ee.Filter.gte('random', 0.80)) ;   \
-      var validation_data = trainingPts\
-          .randomColumn("random",0,"uniform")\
-          .filter(ee.Filter.lt('random', 0.20));\
-          \
-      Map.addLayer(validation_data,\{\},'validation_data')\
-      print('training_size',training_data1.merge(training_data2).merge(training_data3).merge(training_data4).size());\
-      print("validation_size",validation_data.size());\
+  // Here we are classifying a table instead of an image\
+  // Classifiers work on both images and tables\
+  return test\
+    .classify(classifier)\
+    .errorMatrix('class', 'classification')\
+    .accuracy();\
+\});\
 \
-// Step 3.2.2 Sample pixels from the training objects\
-var training1 = predictorimage.sampleRegions(\{\
-    collection: training_data1,\
-    scale: 30,\
-    tileScale: 16\
+var chart = ui.Chart.array.values(\{\
+  array: ee.Array(accuracies_trees),\
+  axis: 0,\
+  xLabels: numTreesList\
+  \}).setOptions(\{\
+      title: 'Hyperparameter Tuning for the numberOfTrees Parameter',\
+      vAxis: \{title: 'Validation Accuracy'\},\
+      hAxis: \{title: 'Number of Trees - individual', gridlines: \{count: 15\}\}\
   \});\
-  \
-var training2 = predictorimage.sampleRegions(\{\
-    collection: training_data2,\
-    scale: 30,\
-    tileScale: 16\
+print(chart);\
+\
+\
+// --- Number of Trees --- //\
+// Tune the numberOfTrees parameter.\
+var numTreesList = ee.List.sequence(90, 140, 10);\
+\
+var accuracies_trees = numTreesList.map(function(t) \{\
+  var classifier = ee.Classifier.smileRandomForest(\{\
+    numberOfTrees:t\})\
+      .train(\{\
+        features: training,\
+        classProperty: 'class',\
+        inputProperties: predictorimage_rfbands.bandNames()\
+      \});\
+\
+  // Here we are classifying a table instead of an image\
+  // Classifiers work on both images and tables\
+  return test\
+    .classify(classifier)\
+    .errorMatrix('class', 'classification')\
+    .accuracy();\
+\});\
+\
+var chart = ui.Chart.array.values(\{\
+  array: ee.Array(accuracies_trees),\
+  axis: 0,\
+  xLabels: numTreesList\
+  \}).setOptions(\{\
+      title: 'Hyperparameter Tuning for the numberOfTrees Parameter',\
+      vAxis: \{title: 'Validation Accuracy'\},\
+      hAxis: \{title: 'Number of Trees - individual', gridlines: \{count: 15\}\}\
   \});\
+print(chart);\
 \
-var training3 = predictorimage.sampleRegions(\{\
-    collection: training_data3,\
-    scale: 30,\
-    tileScale: 16\
+// --- Variables Per Split --- //\
+// Tune the variablesPerSplit parameter.\
+var varPerSplitList = ee.List.sequence(1,8,1);\
+\
+var accuracies_split = varPerSplitList.map(function(s) \{\
+  var classifier = ee.Classifier.smileRandomForest(\{\
+    numberOfTrees:40,\
+    variablesPerSplit:s\})\
+      .train(\{\
+        features: training,\
+        classProperty: 'class',\
+        inputProperties: predictorimage_rfbands.bandNames()\
+      \});\
+\
+  // Here we are classifying a table instead of an image\
+  // Classifiers work on both images and tables\
+  return test\
+    .classify(classifier)\
+    .errorMatrix('class', 'classification')\
+    .accuracy();\
+\});\
+\
+var chart = ui.Chart.array.values(\{\
+  array: ee.Array(accuracies_split),\
+  axis: 0,\
+  xLabels: varPerSplitList\
+  \}).setOptions(\{\
+      title: 'Hyperparameter Tuning for the variablesPerSplit	 Parameter',\
+      vAxis: \{title: 'Validation Accuracy'\},\
+      hAxis: \{title: 'Variables Per Split - individual', gridlines: \{count: 15\}\}\
   \});\
+print(chart);\
 \
-var training4 = predictorimage.sampleRegions(\{\
-    collection: training_data4,\
-    scale: 30,\
-    tileScale: 16\
+\
+\
+\
+// --- Minimum Leaf Population --- //\
+// Tune the minLeafPopulation parameter.\
+\
+var minLeafPopList = ee.List.sequence(1,10,1);\
+\
+var accuracies_minLeafPop = minLeafPopList.map(function(l) \{\
+  var classifier = ee.Classifier.smileRandomForest(\{\
+    numberOfTrees:40,\
+      minLeafPopulation: l\})\
+      .train(\{\
+        features: training,\
+        classProperty: 'class',\
+        inputProperties: predictorimage_rfbands.bandNames()\
+      \});\
+\
+  // Here we are classifying a table instead of an image\
+  // Classifiers work on both images and tables\
+  return test\
+    .classify(classifier)\
+    .errorMatrix('class', 'classification')\
+    .accuracy();\
+\});\
+\
+var chart = ui.Chart.array.values(\{\
+  array: ee.Array(accuracies_minLeafPop),\
+  axis: 0,\
+  xLabels: minLeafPopList\
+  \}).setOptions(\{\
+      title: 'Hyperparameter Tuning for the minLeafPopulation Parameter',\
+      vAxis: \{title: 'Validation Accuracy'\},\
+      hAxis: \{title: 'Minimum Leaf Population - individual', gridlines: \{count: 15\}\}\
   \});\
-  \
-var validation = predictorimage.sampleRegions(\{\
-    // Get the sample from the FeatureCollection.\
-    collection: validation_data,\
-    scale: 30,\
-    tileScale: 16\
+print(chart);\
+\
+\
+\
+// --- Bag Fraction --- //\
+// Tune the bagFraction parameter.\
+var bagFractionList = ee.List.sequence(0.1, 0.9, 0.2);\
+\
+var accuracies_bagFrac = bagFractionList.map(function(b) \{\
+  var classifier = ee.Classifier.smileRandomForest(\{\
+    numberOfTrees:40,\
+    bagFraction:b\})\
+      .train(\{\
+        features: training,\
+        classProperty: 'class',\
+        inputProperties: predictorimage_rfbands.bandNames()\
+      \});\
+\
+  // Here we are classifying a table instead of an image\
+  // Classifiers work on both images and tables\
+  return test\
+    .classify(classifier)\
+    .errorMatrix('class', 'classification')\
+    .accuracy();\
+\});\
+\
+var chart = ui.Chart.array.values(\{\
+  array: ee.Array(accuracies_bagFrac),\
+  axis: 0,\
+  xLabels: bagFractionList\
+  \}).setOptions(\{\
+      title: 'Hyperparameter Tuning for the bagFraction Parameter',\
+      vAxis: \{title: 'Validation Accuracy'\},\
+      hAxis: \{title: 'Bag Fraction - individual', gridlines: \{count: 15\}\}\
   \});\
-  \
-/////////////////////////////////////////////////////\
-// Step 4. Export the training and validation data //\
-/////////////////////////////////////////////////////\
+print(chart);\
 \
 \
-Export.table.toDrive(\{\
-  collection: training1,\
-  description:'trainingpts1_withpredictors',\
-  fileFormat: 'csv'\
+\
+// --- Max Nodes --- //\
+// Tune the maxNodes parameter.\
+var maxNodesList = ee.List.sequence(10,10000,1000);\
+\
+var accuracies_nodes = maxNodesList.map(function(n) \{\
+  var classifier = ee.Classifier.smileRandomForest(\{\
+    numberOfTrees:40,\
+    maxNodes:n\})\
+      .train(\{\
+        features: training,\
+        classProperty: 'class',\
+        inputProperties: predictorimage_rfbands.bandNames()\
+      \});\
+\
+  // Here we are classifying a table instead of an image\
+  // Classifiers work on both images and tables\
+  return test\
+    .classify(classifier)\
+    .errorMatrix('class', 'classification')\
+    .accuracy();\
 \});\
 \
-Export.table.toDrive(\{\
-  collection: training2,\
-  description:'trainingpts2_withpredictors',\
-  fileFormat: 'csv'\
-\});\
-Export.table.toDrive(\{\
-  collection: training3,\
-  description:'trainingpts3_withpredictors',\
-  fileFormat: 'csv'\
-\});\
-Export.table.toDrive(\{\
-  collection: training4,\
-  description:'trainingpts4_withpredictors',\
-  fileFormat: 'csv'\
-\});\
-\
-Export.table.toDrive(\{\
-    collection: validation,\
-  description:'validationpts_withpredictors',\
-  fileFormat: 'CSV'\
-\});\
-\
-Export.table.toAsset(\{\
-  collection:trainingPts,\
-  description:'trainingPts',\
-  assetId:"trainingPts"\
-\});\
-\
-\
-//////////////////////////////////////////////////////\
-// Optional: Identify Training Points used in model //\
-//////////////////////////////////////////////////\
-\
-\
-var training = training1.merge(training2).merge(training3).merge(training4)\
-\
-// Map out Training Points used in classification\
-var trainFilter = ee.Filter.equals(\{\
-  leftField: 'id',\
-  rightField: 'id'\
-\});\
-\
-// Define the join.\
-var simpJoin = ee.Join.simple();\
-\
-// Apply the join.\
-var jointrain = simpJoin.apply(trainingPts, training, trainFilter);\
-var joinval = simpJoin.apply(trainingPts, validation, trainFilter);\
-\
-\
-// Export to Google Drive\
-\
-Export.table.toDrive(\{\
-  collection: jointrain,\
-  description:'jointrain',\
-  fileFormat: 'csv'\
-\});\
-\
-\
-Export.table.toDrive(\{\
-  collection: joinval,\
-  description:'joinval',\
-  fileFormat: 'csv'\
-\});}
+var chart = ui.Chart.array.values(\{\
+  array: ee.Array(accuracies_nodes),\
+  axis: 0,\
+  xLabels: maxNodesList\
+  \}).setOptions(\{\
+      title: 'Hyperparameter Tuning for the maxNodes Parameter',\
+      vAxis: \{title: 'Validation Accuracy'\},\
+      hAxis: \{title: 'Maximum Nodes - individual', gridlines: \{count: 15\}\}\
+  \});\
+print(chart);}

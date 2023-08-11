@@ -1,13 +1,16 @@
-## Code for: Mapping groundwater-dependent ecosystems globally exposes protection needs <br/>
+# Code for: Mapping groundwater-dependent ecosystems globally exposes protection needs
 
-This is the code repository associated with the manuscript Rohde, M.M. et al. Mapping groundwater-dependent ecosystems globally exposes protection needs. (submitted). <br/>
+This is the code repository associated with the manuscript: Rohde, M.M., C.M. Albano, X. Huggins, L. Saito, A. Rodella, A. Sharman, K.R. Klausmeyer, J.K. Howard, Z. Freed, H. Richter, K. Toderich, C. Morton, H.A. Chandanpurkar, A.J. Purdy, J. Huntington, E. Zaveri, T. Gleeson, J.S. Famiglietti. *In Review.* Mapping groundwater-dependent ecosystems globally exposes protection needs.
 
-**Repository structure:**
+**Repository structure**:
+- /01-GDE-mapping-scripts : this folder contains the **core** scripts used to produce the global GDE map. Scripts are variously written in R and in JavaScript for scripts executed in Google Earth Engine. Scripts written in JavaScript are provided in Rich Text file format. **This folder contains its own readme file.**
+- /02-post-hoc-analysis-scripts : this folder contains the preprocessing and analysis scripts used to perform post-hoc analysis of the GDE map produced in the /01-GDE-mapping-scripts. 
 
-This repository contains three folders, each with its own readme file.
+Source data, and dditional scripts, such as plotting scripts, can be made available upon request. For any questions about this repository, please contact:
+Melissa Rohde
+melissa@rohdeenvironmental.com 
 
--   **1-gde-mapping/** -- contains data and code for the identification of groundwater-dependent ecosystems
+or 
 
--   **2-post-hoc/** -- contains code for the post-hoc analyses comparing mapped groundwater-dependent ecosystems with groundwater storage trends and protected areas
-
--   **3-sahel/** -- contains code and data sources for the Greater Sahel case study on groundwater-dependent system fragility
+Xander Huggins
+xanderhuggins@uvic.ca

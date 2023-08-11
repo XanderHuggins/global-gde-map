@@ -1,4 +1,4 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2706
+{\rtf1\ansi\ansicpg1252\cocoartf2709
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
 {\*\expandedcolortbl;;}
@@ -9,9 +9,11 @@
 // Title: RandomBareGroundPoints\
 // Authors: Christine Albano and Melissa M. Rohde\
 // Description: Generate 10,000 random points of bare ground locations on global lands using\
-//              the Dynamic Land Cover dataset.\
-// Last Date Modified: November 2, 2022\
+//              the ESRI's 10m Land Use Land Cover Dataset.\
+// Last Date Modified: April 22, 2023\
 ////////////////////////////////////////////////////////////////////////////////////////////////////\
+\
+Map.setOptions('Satellite');\
 \
 // STEP 1. Define northern and southern hemispheres.\
 \
@@ -29,51 +31,50 @@ var shem =  ee.Geometry.Polygon(\
           [153.31618597137344, -55.16881919707512],\
           [153.31618597137344, 0]]], null, false);\
 \
-// STEP 2. Load COPERNICUS landcover data to classify oceans\
-var dlc_100m = ee.Image("COPERNICUS/Landcover/100m/Proba-V-C3/Global/2019").select('discrete_classification');\
-var ocean_dlc = dlc_100m.neq(200) //oceans\
 \
-// STEP 3. Load Dynamic Land Cover dataset (Based on 2020 Sentinel 2 imagery - 10m resolution)\
-// Source: https://samapriya.github.io/awesome-gee-community-datasets/projects/esrilc2020/\
-// Classes: [b1] 1-Water,2-Trees,3-Grass,4-Flooded Vegetation,5-Crops,6-Scrub/Shrub,7-Built Area,8-Bare Ground,9-Snow/Ice,10-Clouds\
+// STEP 2. Load ESRI 10m Annual Land Use Land Cover(2017-2022)\
+// Source: https://planetarycomputer.microsoft.com/dataset/io-lulc-9-class\
+// Source: https://gee-community-catalog.org/projects/S2TSLULC/\
+//  [b1]: 1-Water,2-Trees,4-Flooded Vegetation,5-Crops,6-Scrub/Shrub,7-Built Area,8-Bare Ground,9-Snow/Ice,10-Clouds, 11-Rangeland\
 \
-var dlc= ee.ImageCollection("projects/sat-io/open-datasets/landcover/ESRI_Global-LULC_10m").mosaic()\
-var urb_dlc = dlc.neq(7) //Built up \
-var ag_dlc = dlc.neq(5) //Crops\
-var barren_dlc = dlc.eq(8) //Bare Ground\
-var barren_nhem = dlc.updateMask(dlc.eq(8)).clip(nhem)\
-var barren_shem = dlc.updateMask(dlc.eq(8)).clip(shem)\
+var esri_lulc10= ee.ImageCollection('projects/sat-io/open-datasets/landcover/ESRI_Global-LULC_10m_TS')\
+                    .filterDate('2017-01-01','2020-12-31') // Filter dates for study period.\
+                    .mosaic()\
 \
-print(barren_nhem.projection(),'barren_nhem') // check projection for stratifiedSample\
-print(barren_shem.projection(),'barren_shem') //check projection for stratifiedSample\
+// Extract the bare ground class.\
+var bare = esri_lulc10.updateMask(esri_lulc10.eq(8)) \
+Map.addLayer(bare,\{\},'bare ground')\
 \
-// STEP 4. Generate Random Points\
-// Northern Hemisphere Random Barren points\
-var randomPoints_nhem = barren_nhem.stratifiedSample(\{\
+\
+\
+\
+//STEP 3. Generate Random Points\
+//Northern Hemisphere Random Barren points\
+var randomPoints_nhem = bare.stratifiedSample(\{\
   numPoints: 5000, \
   seed: 0,\
+  region:nhem,\
   projection: 'EPSG:4326',\
   scale: 30,\
   dropNulls: true,\
   geometries: true\
 \});\
-print('Northern Hemisphere Points:',randomPoints_nhem.first())\
-Map.addLayer(randomPoints_nhem,\{palette:['black']\},'pts_nhem')\
 \
-// Southern Hemisphere Random Barren points\
-var randomPoints_shem = barren_shem.stratifiedSample(\{\
+var randomPoints_shem = bare.stratifiedSample(\{\
   numPoints: 5000, \
   seed: 0,\
+  region:shem,\
   projection: 'EPSG:4326',\
   scale: 30,\
   dropNulls: true,\
   geometries: true\
 \});\
-//print('Southern Hemisphere Points:',randomPoints_nhem.limit(5000))\
-Map.addLayer(randomPoints_shem,\{palette:['black']\},'pts_shem')\
 \
 \
-// STEP 5. Export Random Points to Google Drive\
+\
+// STEP 4. Export Random Points to Google Drive, and \
+// manually add class, gde_cert, gde_descr, gde_source, and gde_type fields to match other training data\
+\
 Export.table.toDrive(\{\
   collection: randomPoints_nhem,\
   description:'random_barren_nhem',\
@@ -84,4 +85,5 @@ Export.table.toDrive(\{\
   collection: randomPoints_shem,\
   description:'random_barren_shem',\
   fileFormat: 'CSV'\
-\});}
+\});\
+}
