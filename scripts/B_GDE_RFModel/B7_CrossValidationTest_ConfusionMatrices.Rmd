@@ -1,0 +1,67 @@
+---
+title: "CrossValidationTest - Confusion Matrices"
+author: "Melissa M. Rohde"
+date: "2023-04-23"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Libraries
+
+```{r cars}
+library(dplyr)
+```
+
+## Sahel
+```{r}
+Sahel_GDE <- read.csv('data/CrossValidationTest/Sahel_GDE_Sample.csv') %>%
+  mutate_at('classification', as.numeric)
+Sahel_nonGDE <- read.csv('data/CrossValidationTest/Sahel_nonGDE_Sample.csv') %>%
+  mutate_at('classification', as.numeric)
+
+gdeGDE <- count(Sahel_GDE[which(Sahel_GDE$classification==1),])
+nongdeNONGDE <- count(Sahel_nonGDE[which(Sahel_nonGDE$classification==2),])
+gdeNONGDE <- count(Sahel_GDE[which(Sahel_GDE$classification==2),])
+nongdeGDE <- count(Sahel_nonGDE[which(Sahel_nonGDE$classification==1),])
+
+Accuracy = (gdeGDE$n+nongdeNONGDE$n)/(gdeGDE$n+nongdeNONGDE$n+gdeNONGDE$n+nongdeGDE$n)
+print(Accuracy*100)
+print(gdeGDE$n+nongdeNONGDE$n+gdeNONGDE$n+nongdeGDE$n)
+
+```
+
+## Western Australia
+```{r}
+WestAus <- read.csv('data/CrossValidationTest/CrossVal_WestAus.csv') %>%
+  mutate_at('classification', as.numeric)
+
+gdeGDE <- count(WestAus[which(WestAus$class==1 & WestAus$classification==1),])
+nongdeNONGDE <- count(WestAus[which(WestAus$class==2 & WestAus$classification==2),])
+gdeNONGDE <- count(WestAus[which(WestAus$class==1 & WestAus$classification==2),])
+nongdeGDE <- count(WestAus[which(WestAus$class==2 & WestAus$classification==1),])
+
+Accuracy = (gdeGDE$n+nongdeNONGDE$n)/(gdeGDE$n+nongdeNONGDE$n+gdeNONGDE$n+nongdeGDE$n)
+print(Accuracy*100)
+print(gdeGDE$n+nongdeNONGDE$n+gdeNONGDE$n+nongdeGDE$n)
+
+```
+
+
+## New Mexico, USA
+```{r}
+ NM <- read.csv('data/CrossValidationTest/CrossVal_NewMexico.csv') %>%
+   mutate_at('classification', as.numeric)
+ 
+ gdeGDE <- count(NM[which(NM$class==1 & NM$classification==1),])
+ nongdeNONGDE <- count(NM[which(NM$class==2 & NM$classification==2),])
+ gdeNONGDE <- count(NM[which(NM$class==1 & NM$classification==2),])
+ nongdeGDE <- count(NM[which(NM$class==2 & NM$classification==1),])
+ 
+ Accuracy = (gdeGDE$n+nongdeNONGDE$n)/(gdeGDE$n+nongdeNONGDE$n+gdeNONGDE$n+nongdeGDE$n)
+ print(Accuracy*100)
+ print(gdeGDE$n+nongdeNONGDE$n+gdeNONGDE$n+nongdeGDE$n)
+
+```

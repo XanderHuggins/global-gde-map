@@ -1,13 +1,18 @@
-# Code for: Mapping groundwater-dependent ecosystems globally exposes protection needs
+# Code for: Groundwater-dependent ecosystem map exposes global dryland protection needs
 
-This is the code repository associated with the manuscript: Rohde, M.M., C.M. Albano, X. Huggins, L. Saito, A. Rodella, A. Sharman, K.R. Klausmeyer, J.K. Howard, Z. Freed, H. Richter, K. Toderich, C. Morton, H.A. Chandanpurkar, A.J. Purdy, J. Huntington, E. Zaveri, T. Gleeson, J.S. Famiglietti. *In Review.* Mapping groundwater-dependent ecosystems globally exposes protection needs.
+[![](<https://img.shields.io/badge/Zenodo  DOI-10.5281/zenodo.11062894-yellow>)](https://doi.org/10.5281/zenodo.11062894)
 
-**Repository structure**:
-- `/01-GDE-mapping-scripts` : this folder contains the **core** scripts used to produce the global GDE map. Scripts are variously written in R and in JavaScript for scripts executed in Google Earth Engine. Scripts written in JavaScript are provided in Rich Text file format. **This folder contains its own readme file.**
-- `/02-post-hoc-analysis-scripts` : this folder contains the preprocessing and analysis scripts used to perform post-hoc analysis of the GDE map produced in the `/01-GDE...` folder. 
+This is the code repository associated with the manuscript: Rohde, M.M., C.M. Albano, X. Huggins, K.R. Klausmeyer, C. Morton, A. Sharman, E. Zaveri, L. Saito, Z. Freed, J.K. Howard, N. Job, H. Richter, K. Toderich, A. Rodella, T. Gleeson, J. Huntington, H.A. Chandanpurkar, A.J. Purdy, J.S. Famiglietti, M.B. Singer, D.A. Roberts, K. Caylor, J.C. Stella. Groundwater-dependent ecosystem map exposes global dryland protection needs. Nature (2024).
 
-Source data, and dditional scripts, such as plotting scripts, can be made available upon request. <br>
+Technical documentation, including an overview and description of this repository, can be found in the repository manual [HERE](). 
 
 **For any questions about this repository, please contact:** <br>
-Melissa Rohde melissa@rohdeenvironmental.com, or <br>
+Melissa Rohde melissa@rohdeenvironmental.com, and/or <br>
 Xander Huggins xanderhuggins@uvic.ca
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/XanderHuggins/global-GDE-map/main/assets/cover_map.png" 
+  width="100%"/>
+</p>
+<br/> 
+
