@@ -7,7 +7,7 @@ library(here)
 # 
 gde_layer = terra::rast("D:/Geodatabase/GDEs/GDE_data_deposit_v6/GDE_30arcmin.tif")
 
-# develop a flagfor where GDE area is NA but analyzed area > 0
+# develop a flag for where GDE area is NA but analyzed area > 0
 flag_r = rast(gde_layer)
 flag_r$f = NA
 

@@ -63,7 +63,7 @@ message(ANL_area/1e6)
 message((ANL_area - GDE_area)/1e6)
 #> 14.8349 million km2 of area analyzed that is not likely a GDE
 
-# proportion of GDE area to analzed area
+# proportion of GDE area to analyzed area
 GDE_area/ANL_area 
 #> 0.359831
 #> 35.98%

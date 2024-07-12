@@ -18,7 +18,7 @@ pst_c = terra::crop(pst_c, gde_c)
 
 bivar = gde_c*10 + pst_c
 
-# writeRaster(bivar, filename = here("data/BIVAR_gde_density_and_pasture_density_v2.tif"))
+writeRaster(bivar, filename = here("data/BIVAR_gde_density_and_pasture_density_v2.tif"))
 
 # calculate GDE area in regions with >0.25% pastoral land @ 5 arc minute
 GDE_in_pastoral = c(gde$GDE_sqm, pasture |> crop(gde$GDE_sqm)) |> 
@@ -33,23 +33,3 @@ message(GDE_in_pastoral/1e6 /1e6)
 GDE_in_pastoral / sum(gde$GDE_sqm[], na.rm = T)
 #> 0.5880405
 #> 59%
-
-
-
-
-# # Calculate summary statistics
-# rcl.mat = c(seq(0, 0.75, by = 0.25,),
-#             seq(0.25, 1, by = 0.25),
-#             seq(1, 4, by = 1)) |>
-#   matrix(ncol = 3)
-# rcl.mat[4,2] = Inf
-# pst_c = terra::classify(x = pasture, rcl = rcl.mat, include.lowest = T)
-# pst_c = terra::crop(pst_c, gde)
-# pst_stat = terra::zonal(x = gde, z = pst_c, fun = "sum", na.rm = T)
-# pst_stat$pct = round(100*pst_stat$GDE_sqkm / sum(pst_stat$GDE_sqkm), 2)
-# pst_stat$pctcs = 100- cumsum(pst_stat$pct)
-# pst_stat$GDE_sqkm = pst_stat$GDE_sqkm/1e6
-# pst_stat
-# 
-# gde_c = terra::classify(x = gde, rcl = rcl.mat, include.lowest = T)
-# pst_c = terra::classify(x = pasture, rcl = rcl.mat, include.lowest = T)

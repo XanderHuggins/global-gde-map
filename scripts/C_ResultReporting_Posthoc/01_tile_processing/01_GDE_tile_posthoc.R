@@ -121,13 +121,6 @@ gdeXprotXcont = (100*gde_tile) + (10*prot_status_r) + conts_r
 zonal_df = rasterDT::zonalDT(x = raster(area_r), z = raster(gdeXprotXcont), fun = sum, na.rm = T) |> as_tibble()
 write_rds(x = zonal_df, file = paste0("./data_out/gdeXprotXcont_dat/gdeXprotXcont_tile_", i, ".rds"))
 
-# gdeXprot =  trunc(gdeXprotXcont/10) # removes continents from raster
-# writeRaster(x = gdeXprot, 
-#             filename = paste0("./raster_out/gdeXprot/gdeXprot_tile_", i, ".tif"), 
-#             wopt=list(datatype="INT1U"),
-#             overwrite = T)
-
-
 ## AGGREGATING ------------ \\\\ 
 
 # create a binary map of (1) GDE area, (2) analyzed area [ANL], and (3) all area [ALL]

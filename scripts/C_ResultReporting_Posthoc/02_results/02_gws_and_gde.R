@@ -141,8 +141,6 @@ feow_stat = c(feow_r, gde_30arcminute$GDE_frac_GA/1e8 |> as.numeric(), gws_trend
 # identify which bin to place ID label for given FEOW
 feow_stat |> filter(feowid == 125) # Sacramento - San Joaquin
 feow_stat |> filter(feowid == 340) # Cuyan - Desaguadero
-# feow_stat |> filter(feowid == 348) # Patagonia
-# feow_stat |> filter(feowid == 448) # Kavir & Lut Deserts
 feow_stat |> filter(feowid == 450) # Turan Plain
 feow_stat |> filter(feowid == 509) # Senegal - Gambia
 feow_stat |> filter(feowid == 569) # Okavango
