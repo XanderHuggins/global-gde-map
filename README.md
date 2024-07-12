@@ -5,7 +5,8 @@ Rohde, M.M., C.M. Albano, X. Huggins, K.R. Klausmeyer, C. Morton, A. Sharman, E.
 
 Technical documentation, including an overview and description of this repository, can be found in the repository manual [HERE](https://github.com/XanderHuggins/global-gde-map/blob/main/assets/RepoManual.pdf). We recommend downloading the manual as a PDF for easier navigation. 
 
-GDE data are deposited on Zenodo for download. Access the data repository here: [![](<https://img.shields.io/badge/Zenodo  DOI-10.5281/zenodo.11062894-yellow>)](https://doi.org/10.5281/zenodo.11062894)
+GDE data are deposited on Zenodo for download. [![](<https://img.shields.io/badge/Click here to go to the Zenodo repository -10.5281/zenodo.11062894-yellow>)](https://doi.org/10.5281/zenodo.11062894) 
+
 
 **For any questions about this repository, please contact:** <br>
 Melissa Rohde melissa@rohdeenvironmental.com, and/or <br>
